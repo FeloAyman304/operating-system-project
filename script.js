@@ -3,11 +3,11 @@
 const processes = [];
 
 // Event listeners
-window.onload = () => {
-    document.getElementById('addProcess').addEventListener('click', addProcess);
-    document.getElementById('schedule').addEventListener('click', runScheduler);
-    document.getElementById('algorithm').addEventListener('change', handleAlgorithmChange);
-};
+document.getElementById('addProcess').addEventListener('click', addProcess);
+document.getElementById('schedule').addEventListener('click', runScheduler);
+document.getElementById('algorithm').addEventListener('change', handleAlgorithmChange);
+// window.onload = () => {
+// };
 
 // Add a process to the list
 function addProcess() {
@@ -224,7 +224,7 @@ function drawSRTFGanttChart(ganttData) {
         if (currentProcess !== event.processId) {
             // End previous process block
             if (currentProcess !== null) {
-                const duration = event.startTime - startTime;
+                const duration = (event.startTime - startTime)+2;
                 const block = createGanttBlock(currentProcess, startTime, event.startTime, duration, scale);
                 chartContainer.appendChild(block);
             }
@@ -384,7 +384,7 @@ function drawGanttChart(results) {
     chartContainer.style.margin = '10px 0';
 
     results.forEach((result) => {
-        const duration = result.endTime - result.startTime;
+        const duration = (result.endTime - result.startTime)+2;
 
         // Create a block for the process
         const block = document.createElement('div');
@@ -399,7 +399,7 @@ function drawGanttChart(results) {
         block.innerHTML = `
             <strong>${result.processId}</strong><br>
              ${result.startTime}
-            - ${result.endTime}
+            - ${result.endTime} 
         `;
 
         chartContainer.appendChild(block);
@@ -407,6 +407,13 @@ function drawGanttChart(results) {
 
     ganttChartDiv.appendChild(chartContainer); // Add chart to the container
 }
+
+
+
+
+
+
+
 
 
 
@@ -432,8 +439,8 @@ function updateProcessTable() {
             <td>${process.burstTime}</td>
             <td>${process.priority !== null ? process.priority : 'N/A'}</td>
             <td class="grid text-center d-flex">
-                <button  onclick="editProcess(${index})">Edit</button>
-                <button onclick="deleteProcess(${index})">Delete</button>
+                <button class="btn btn-outline-danger" onclick="editProcess(${index})">Edit</button>
+                <button class="btn btn-outline-danger" onclick="deleteProcess(${index})">Delete</button>
             </td>
         `;
         tableBody.appendChild(row);
@@ -453,8 +460,13 @@ function editProcess(index) {
     // Change the button action to update the process
     const addButton = document.getElementById('addProcess');
     addButton.textContent = 'Update Process';
-    addButton.removeEventListener('click', addProcess);
-    addButton.addEventListener('click', () => updateProcess(index));
+
+    // Remove all previous listeners
+    const newAddProcessHandler = updateProcess.bind(null, index);
+    addButton.replaceWith(addButton.cloneNode(true));
+    const updatedAddButton = document.getElementById('addProcess');
+    updatedAddButton.textContent = 'Update Process';
+    updatedAddButton.addEventListener('click', newAddProcessHandler);
 }
 
 // Update the process in the array
@@ -476,8 +488,10 @@ function updateProcess(index) {
     document.getElementById('process-form').reset();
     const addButton = document.getElementById('addProcess');
     addButton.textContent = 'Add Process';
-    addButton.removeEventListener('click', updateProcess);
-    addButton.addEventListener('click', addProcess);
+
+    addButton.replaceWith(addButton.cloneNode(true));
+    const resetAddButton = document.getElementById('addProcess');
+    resetAddButton.addEventListener('click', addProcess);
 
     // Update the table
     updateProcessTable();
@@ -492,37 +506,48 @@ function deleteProcess(index) {
     updateProcessTable();
 }
 
+// Add a process (if not already implemented)
+function addProcess() {
+    const processId = document.getElementById('processId').value;
+    const arrivalTime = parseInt(document.getElementById('arrivalTime').value);
+    const burstTime = parseInt(document.getElementById('burstTime').value);
+    const priority = parseInt(document.getElementById('priority').value) || null;
+
+    if (!processId || isNaN(arrivalTime) || isNaN(burstTime)) {
+        alert('Please fill out all required fields correctly.');
+        return;
+    }
+
+    // Add the new process to the array
+    processes.push({ processId, arrivalTime, burstTime, priority });
+
+    // Reset the form
+    document.getElementById('process-form').reset();
+
+    // Update the table
+    updateProcessTable();
+}
 
 
 
+// Event listener for the "Clear Data" button
+document.getElementById('clearData').addEventListener('click', clearData);
 
-
-
-
-
-
-
-
-
+// Clear Data Function
 function clearData() {
-    // Reset processes array (or any relevant global data)
-    processes = []; // Assuming 'processes' is globally defined
+    // Confirm the action with the user
+    const confirmation = confirm('Are you sure you want to clear all data?');
+    if (!confirmation) return;
 
-    // Clear results display
-    const resultsTable = document.getElementById('resultsTable'); // Adjust ID as needed
-    if (resultsTable) {
-        resultsTable.innerHTML = '';
-    }
+    // Clear the processes array
+    processes.length = 0;
 
-    // Clear Gantt Chart
-    const ganttChart = document.getElementById('ganttChart'); // Adjust ID as needed
-    if (ganttChart) {
-        ganttChart.innerHTML = '';
-    }
+    // Update the process table
+    updateProcessTable();
 
-    // Optionally reset other UI elements like input fields
-    const inputFields = document.querySelectorAll('.processInput');
-    inputFields.forEach((field) => (field.value = ''));
-    
-    console.log("Data cleared.");
+    // Clear any displayed results and Gantt chart
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('gantt-chart').innerHTML = '';
+
+    alert('All data has been cleared.');
 }
